@@ -1,0 +1,132 @@
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  font-family: 'Cinzel', 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, Garamond, serif;
+  --ink: #f7ebce;
+  --line: rgb(246 207 118 / 28%);
+  --panel: rgb(8 26 23 / 86%);
+  --panel-strong: rgb(6 22 19 / 92%);
+  --danger: #f2978d;
+}
+
+body {
+  margin: 0;
+  min-height: 100svh;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 12% 8%, rgb(248 211 120 / 14%) 0%, transparent 25%),
+    radial-gradient(circle at 88% 12%, rgb(247 196 95 / 10%) 0%, transparent 24%),
+    linear-gradient(150deg, #041f1b 0%, #0a2f29 52%, #051716 100%);
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+.panel-base {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--panel-base-radius, 0.85rem);
+  padding: var(--panel-base-padding, 0.75rem);
+  background: var(--panel-base-background, linear-gradient(145deg, rgb(7 29 25 / 96%) 0%, rgb(3 15 13 / 98%) 100%));
+  box-shadow: var(--panel-base-shadow, 0 0.7rem 1.8rem rgb(0 0 0 / 30%));
+}
+
+.panel-base::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 4px;
+  background-image: linear-gradient(
+    90deg,
+    rgb(244 203 112 / 0%) 0%,
+    rgb(244 203 112 / 2%) 30%,
+    rgb(244 203 112 / 11%) 40%,
+    rgb(244 203 112 / 32%) 46%,
+    rgb(244 203 112 / 74%) 50%,
+    rgb(244 203 112 / 32%) 54%,
+    rgb(244 203 112 / 11%) 60%,
+    rgb(244 203 112 / 2%) 70%,
+    rgb(244 203 112 / 0%) 100%
+  );
+  background-size: 44rem 100%;
+  background-repeat: repeat-x;
+  animation: panel-sheen 2.8s linear infinite;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, black 6%, black 94%, transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0%, black 6%, black 94%, transparent 100%);
+}
+
+.input-base {
+  min-width: 0;
+  padding: var(--input-base-padding, 0.52rem 0.62rem);
+  border-radius: var(--control-radius, 0.56rem);
+  border: 1px solid rgb(248 204 111 / 42%);
+  background: linear-gradient(130deg, rgb(6 24 20 / 94%) 0%, rgb(2 12 10 / 92%) 100%);
+  color: var(--ink);
+  box-shadow: 0 0 0 1px rgb(250 217 137 / 10%) inset;
+}
+
+.btn {
+  padding: var(--btn-padding, 0.53rem 0.86rem);
+  line-height: var(--btn-line-height, normal);
+  border-radius: var(--control-radius, 0.56rem);
+  border: 1px solid rgb(248 204 111 / 42%);
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--btn-fg, #31240e);
+  background: linear-gradient(122deg, #fde6a7 0%, #ecb457 100%);
+  box-shadow:
+    0 0.33rem 0.75rem rgb(0 0 0 / 26%),
+    0 0 0 1px rgb(249 226 160 / 30%) inset;
+}
+
+.btn-secondary {
+  color: var(--btn-secondary-fg, #f0d9a7);
+  background: linear-gradient(135deg, rgb(8 28 24 / 95%) 0%, rgb(4 17 14 / 96%) 100%);
+}
+
+.btn-danger {
+  color: #f4b9ae;
+  background: linear-gradient(135deg, rgb(80 23 18 / 94%) 0%, rgb(60 13 10 / 96%) 100%);
+}
+
+.btn:disabled {
+  opacity: 0.62;
+  cursor: not-allowed;
+}
+
+.error-text {
+  margin: 0;
+  font-size: var(--error-text-size, 0.86rem);
+  color: var(--danger);
+}
+
+.error-text-animated {
+  animation: warn-flicker 1.2s ease-in-out infinite;
+}
+
+@keyframes panel-sheen {
+  from {
+    background-position-x: 0;
+  }
+  to {
+    background-position-x: 44rem;
+  }
+}
+
+@keyframes warn-flicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.64;
+  }
+}
