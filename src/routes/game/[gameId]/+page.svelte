@@ -713,6 +713,7 @@ onMount(() => {
 
 <style>
 .game {
+  --asset-build-marker: 1;
   max-width: 34rem;
   margin: 0 auto;
   padding: 0.75rem;

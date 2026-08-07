@@ -48,12 +48,49 @@ bun run dev
 Optional realtime config:
 
 ```bash
-# websocket server + client port (defaults to 24678)
+# websocket server + client port for local development (defaults to 24678)
 COUP_WS_PORT=24678 VITE_COUP_WS_PORT=24678 bun run dev
+
+# or point the client at a full websocket URL
+VITE_COUP_WS_URL=wss://coup.example.com:24678 bun run build
 ```
 
 Type checks:
 
 ```bash
 bun run check
+```
+
+## Run With Docker
+
+```bash
+docker compose up --build
+```
+
+The container serves the SvelteKit app on port `3000` and the realtime
+WebSocket server on port `24678`.
+
+Caddy should proxy HTTP requests to the app and WebSocket upgrades to the
+realtime server on the same public origin, for example:
+
+```caddy
+coup.example.com {
+	@websocket {
+		header Connection *Upgrade*
+		header Upgrade websocket
+	}
+
+	handle @websocket {
+		reverse_proxy coup:24678 {
+			transport http {
+				read_timeout 0
+				write_timeout 0
+			}
+		}
+	}
+
+	handle {
+		reverse_proxy coup:3000
+	}
+}
 ```

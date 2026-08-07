@@ -24,10 +24,22 @@ export type RealtimeClient = {
 };
 
 function websocketUrl() {
+  const configuredUrl = import.meta.env.VITE_COUP_WS_URL?.trim();
+  if (configuredUrl) {
+    return configuredUrl;
+  }
+
   const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
   const configuredPort = Number.parseInt(import.meta.env.VITE_COUP_WS_PORT ?? '', 10);
-  const port = Number.isFinite(configuredPort) && configuredPort > 0 ? configuredPort : DEFAULT_WS_PORT;
-  return `${protocol}://${window.location.hostname}:${port}`;
+  if (Number.isFinite(configuredPort) && configuredPort > 0) {
+    return `${protocol}://${window.location.hostname}:${configuredPort}`;
+  }
+
+  if (import.meta.env.DEV) {
+    return `${protocol}://${window.location.hostname}:${DEFAULT_WS_PORT}`;
+  }
+
+  return `${protocol}://${window.location.host}`;
 }
 
 function parseRealtimeMessage(eventData: string) {

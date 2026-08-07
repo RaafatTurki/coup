@@ -245,6 +245,7 @@ function handleGlobalKeydown(event: KeyboardEvent): void {
 
 <style>
 .lobby {
+  --asset-build-marker: 1;
   min-height: 100svh;
   padding: 0.75rem;
   display: grid;

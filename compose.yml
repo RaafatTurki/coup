@@ -1,0 +1,15 @@
+services:
+  coup:
+    image: coup:latest
+    container_name: coup
+    build: .
+    restart: unless-stopped
+    expose:
+      - "3000"
+      - "24678"
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external: true
