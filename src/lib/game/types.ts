@@ -44,7 +44,6 @@ export type PendingState =
       claimRole: InfluenceCard;
       blockRoles: BlockRole[];
       pendingPlayerIds: string[];
-      passedPlayerIds: string[];
     }
   | {
       type: 'await_action_challenge';
@@ -53,7 +52,6 @@ export type PendingState =
       targetId?: string;
       claimRole: InfluenceCard;
       pendingPlayerIds: string[];
-      passedPlayerIds: string[];
     }
   | {
       type: 'await_block';
@@ -61,7 +59,6 @@ export type PendingState =
       action: GameActionType;
       targetId?: string;
       pendingPlayerIds: string[];
-      passedPlayerIds: string[];
     }
   | {
       type: 'await_block_challenge';
@@ -71,7 +68,6 @@ export type PendingState =
       blockerId: string;
       blockRole: BlockRole;
       pendingPlayerIds: string[];
-      passedPlayerIds: string[];
     }
   | {
       type: 'await_influence';
@@ -129,7 +125,6 @@ export type PublicPendingState =
       claimRole: InfluenceCard;
       blockRoles: BlockRole[];
       pendingPlayerIds: string[];
-      passedPlayerIds: string[];
     }
   | {
       type: 'await_action_challenge';
@@ -138,7 +133,6 @@ export type PublicPendingState =
       targetId?: string;
       claimRole: InfluenceCard;
       pendingPlayerIds: string[];
-      passedPlayerIds: string[];
     }
   | {
       type: 'await_block';
@@ -146,7 +140,6 @@ export type PublicPendingState =
       action: GameActionType;
       targetId?: string;
       pendingPlayerIds: string[];
-      passedPlayerIds: string[];
     }
   | {
       type: 'await_block_challenge';
@@ -156,7 +149,6 @@ export type PublicPendingState =
       blockerId: string;
       blockRole: BlockRole;
       pendingPlayerIds: string[];
-      passedPlayerIds: string[];
     }
   | {
       type: 'await_influence';

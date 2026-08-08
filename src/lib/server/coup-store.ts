@@ -39,7 +39,7 @@ const BLOCK_ROLES_BY_ACTION: Record<'foreign_aid' | 'steal' | 'assassinate', Blo
 };
 type ResponsePending = Extract<
   PendingState,
-  { pendingPlayerIds: string[]; passedPlayerIds: string[] }
+  { pendingPlayerIds: string[] }
 >;
 
 const games = new Map<string, GameState>();
@@ -514,8 +514,7 @@ function beginActionChallenge(
     action,
     targetId,
     claimRole,
-    pendingPlayerIds,
-    passedPlayerIds: []
+    pendingPlayerIds
   };
 
   const actor = getPlayerOrThrow(game, actorId);
@@ -548,8 +547,7 @@ function beginActionResponse(
     targetId,
     claimRole,
     blockRoles: [...BLOCK_ROLES_BY_ACTION[action]],
-    pendingPlayerIds,
-    passedPlayerIds: []
+    pendingPlayerIds
   };
 
   const actor = getPlayerOrThrow(game, actorId);
@@ -580,8 +578,7 @@ function beginBlockWindow(game: GameState, actorId: string, action: GameActionTy
     actorId,
     action,
     targetId,
-    pendingPlayerIds,
-    passedPlayerIds: []
+    pendingPlayerIds
   };
 
   appendLog(game, `Players may block ${action.replace('_', ' ')}.`);
@@ -684,9 +681,6 @@ function resolveClaimChallenge(
 
 function removePendingResponder(pending: ResponsePending, playerId: string): void {
   pending.pendingPlayerIds = pending.pendingPlayerIds.filter((id) => id !== playerId);
-  if (!pending.passedPlayerIds.includes(playerId)) {
-    pending.passedPlayerIds.push(playerId);
-  }
 }
 
 function requireActiveTurn(game: GameState, playerId: string): PlayerState {
@@ -876,8 +870,7 @@ function beginBlockChallenge(
     targetId,
     blockerId: blocker.id,
     blockRole,
-    pendingPlayerIds: challengers,
-    passedPlayerIds: []
+    pendingPlayerIds: challengers
   };
 
   if (challengers.length === 1) {
@@ -1291,10 +1284,9 @@ export function getGame(gameId: string): GameState {
   return getGameOrThrow(gameId);
 }
 
-export function heartbeatPlayer(gameId: string, playerId: string): { game: GameState; changed: boolean } {
+export function heartbeatPlayer(gameId: string, playerId: string): void {
   const game = getGameOrThrow(gameId);
   getPlayerOrThrow(game, playerId);
-  return { game, changed: false };
 }
 
 function toPublicPending(pending: PendingState | null, viewerPlayerId: string | undefined): PublicPendingState | null {
@@ -1311,8 +1303,7 @@ function toPublicPending(pending: PendingState | null, viewerPlayerId: string | 
         targetId: pending.targetId,
         claimRole: pending.claimRole,
         blockRoles: [...pending.blockRoles],
-        pendingPlayerIds: [...pending.pendingPlayerIds],
-        passedPlayerIds: [...pending.passedPlayerIds]
+        pendingPlayerIds: [...pending.pendingPlayerIds]
       };
     case 'await_action_challenge':
       return {
@@ -1321,8 +1312,7 @@ function toPublicPending(pending: PendingState | null, viewerPlayerId: string | 
         action: pending.action,
         targetId: pending.targetId,
         claimRole: pending.claimRole,
-        pendingPlayerIds: [...pending.pendingPlayerIds],
-        passedPlayerIds: [...pending.passedPlayerIds]
+        pendingPlayerIds: [...pending.pendingPlayerIds]
       };
     case 'await_block':
       return {
@@ -1330,8 +1320,7 @@ function toPublicPending(pending: PendingState | null, viewerPlayerId: string | 
         actorId: pending.actorId,
         action: pending.action,
         targetId: pending.targetId,
-        pendingPlayerIds: [...pending.pendingPlayerIds],
-        passedPlayerIds: [...pending.passedPlayerIds]
+        pendingPlayerIds: [...pending.pendingPlayerIds]
       };
     case 'await_block_challenge':
       return {
@@ -1341,8 +1330,7 @@ function toPublicPending(pending: PendingState | null, viewerPlayerId: string | 
         targetId: pending.targetId,
         blockerId: pending.blockerId,
         blockRole: pending.blockRole,
-        pendingPlayerIds: [...pending.pendingPlayerIds],
-        passedPlayerIds: [...pending.passedPlayerIds]
+        pendingPlayerIds: [...pending.pendingPlayerIds]
       };
     case 'await_influence':
       return {
