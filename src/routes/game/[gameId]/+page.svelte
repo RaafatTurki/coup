@@ -6,6 +6,7 @@ import {
   ACTION_TYPES,
   type BlockRole,
   type GameActionType,
+  type InfluenceCard,
   type PlayerCommand,
   type PublicGameState
 } from '$lib/game/types';
@@ -13,6 +14,7 @@ import { actionNeedsTarget as actionRequiresTarget, canUseAction as canUseGameAc
 import { clearStoredPlayer, readStoredPlayer, rememberPlayer } from '$lib/game/client';
 import { createRealtimeClient, type RealtimeClient } from '$lib/game/realtime';
 import { messageFromError, requestJson } from '$lib/game/http';
+import CardSpotlight from '$lib/components/CardSpotlight.svelte';
 import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
 import GamePlayersList from '$lib/components/GamePlayersList.svelte';
 
@@ -43,6 +45,7 @@ let selectedBlockRole = $state<BlockRole>('captain');
 let selectedExchangeKeepIds = $state<string[]>([]);
 let exchangeSelectionKey = $state('');
 let confirmation = $state<Confirmation | null>(null);
+let spotlightCard = $state<InfluenceCard | null>(null);
 
 let realtimeClient: RealtimeClient | null = null;
 let copyFeedbackTimer: ReturnType<typeof setTimeout> | null = null;
@@ -73,6 +76,14 @@ function playerNameById(id: string | undefined): string {
     return '-';
   }
   return game?.players.find((player) => player.id === id)?.name ?? id;
+}
+
+function previewCard(card: InfluenceCard): void {
+  spotlightCard = card;
+}
+
+function closeCardSpotlight(): void {
+  spotlightCard = null;
 }
 
 function canUseAction(action: GameActionType): boolean {
@@ -756,6 +767,7 @@ onMount(() => {
       canManage={isHost}
       controlsDisabled={actionPending || startPending || resetPending}
       onToggleExchangeOption={toggleExchangeOption}
+      onPreviewCard={previewCard}
       onTransferHost={transferHostTo}
       onKick={kickPlayerFromTable}
     />
@@ -773,6 +785,7 @@ onMount(() => {
     onConfirm={confirmAction}
     onCancel={cancelConfirmation}
   />
+  <CardSpotlight card={spotlightCard} onClose={closeCardSpotlight} />
 </main>
 
 <style>

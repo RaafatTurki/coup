@@ -3,7 +3,7 @@ import { flip } from 'svelte/animate';
 import { cubicInOut } from 'svelte/easing';
 import { onDestroy } from 'svelte';
 import { Crown, Skull, UserX, Wifi, WifiOff } from 'lucide-svelte';
-import type { PlayerView, PublicGameState } from '$lib/game/types';
+import type { InfluenceCard, PlayerView, PublicGameState } from '$lib/game/types';
 import CoupCard from '$lib/components/CoupCard.svelte';
 
 type CardSlot = { card: PlayerView['cards'][number] | null; hidden: boolean; revealed: boolean };
@@ -36,6 +36,7 @@ let {
   canManage = false,
   controlsDisabled = false,
   onToggleExchangeOption = () => {},
+  onPreviewCard = () => {},
   onTransferHost = async () => {},
   onKick = async () => {}
 } = $props<{
@@ -47,6 +48,7 @@ let {
   canManage?: boolean;
   controlsDisabled?: boolean;
   onToggleExchangeOption?: (optionId: string) => void;
+  onPreviewCard?: (card: InfluenceCard) => void;
   onTransferHost?: (targetId: string) => void | Promise<void>;
   onKick?: (targetId: string) => void | Promise<void>;
 }>();
@@ -276,12 +278,17 @@ function playerDisplayCards(player: PublicGameState['players'][number]): Display
   return [...concealedCards, ...extraCards, ...revealedCards];
 }
 
-function handleCardInteraction(optionId: string | undefined): void {
-  if (!optionId || controlsDisabled) {
+function handleCardInteraction(slot: DisplayCard): void {
+  if (slot.selectable && slot.optionId) {
+    if (!controlsDisabled) {
+      onToggleExchangeOption(slot.optionId);
+    }
     return;
   }
 
-  onToggleExchangeOption(optionId);
+  if (slot.card) {
+    onPreviewCard(slot.card);
+  }
 }
 
 function exchangeEnterOptions(slot: DisplayCard): { duration: number } {
@@ -393,9 +400,9 @@ onDestroy(() => {
                   size="sm"
                   animate={false}
                   showLabel={false}
-                  pressable={slot.selectable}
+                  pressable={slot.selectable || Boolean(slot.card)}
                   selected={slot.selected}
-                  onPress={() => handleCardInteraction(slot.optionId)}
+                  onPress={() => handleCardInteraction(slot)}
                 />
               </div>
             {/each}
