@@ -166,10 +166,7 @@ function runHeartbeat(state: RealtimeState): void {
     }
 
     try {
-      const { game, changed } = heartbeatPlayer(client.gameId, client.playerId);
-      if (changed) {
-        broadcastToSubscribers(state, game);
-      }
+      heartbeatPlayer(client.gameId, client.playerId);
     } catch (error) {
       sendJson(socket, {
         type: 'error',
