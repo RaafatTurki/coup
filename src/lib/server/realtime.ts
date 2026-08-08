@@ -29,7 +29,7 @@ type RealtimeState = {
 };
 
 const globalRealtime = globalThis as typeof globalThis & {
-  __coupRealtimeState?: RealtimeState | null;
+  __RT?: RealtimeState | null;
 };
 
 function normalizePort(rawValue: string | undefined): number {
@@ -258,12 +258,12 @@ function ensureRealtimeState(): RealtimeState | null {
     return null;
   }
 
-  if (globalRealtime.__coupRealtimeState !== undefined) {
-    return globalRealtime.__coupRealtimeState;
+  if (globalRealtime.__RT !== undefined) {
+    return globalRealtime.__RT;
   }
 
-  globalRealtime.__coupRealtimeState = createRealtimeState();
-  return globalRealtime.__coupRealtimeState;
+  globalRealtime.__RT = createRealtimeState();
+  return globalRealtime.__RT;
 }
 
 export function broadcastGameState(game: GameState): void {

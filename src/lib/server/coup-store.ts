@@ -44,7 +44,7 @@ type ResponsePending = Extract<
 
 const games = new Map<string, GameState>();
 const globalStore = globalThis as typeof globalThis & {
-  __coupGameSweepStarted?: boolean;
+  __isSweeping?: boolean;
 };
 
 export class GameError extends Error {
@@ -58,11 +58,11 @@ export class GameError extends Error {
 }
 
 function startGameSweep(): void {
-  if (globalStore.__coupGameSweepStarted) {
+  if (globalStore.__isSweeping) {
     return;
   }
 
-  globalStore.__coupGameSweepStarted = true;
+  globalStore.__isSweeping = true;
   const sweepTimer = setInterval(() => {
     const now = nowMs();
     for (const [gameId, game] of games.entries()) {

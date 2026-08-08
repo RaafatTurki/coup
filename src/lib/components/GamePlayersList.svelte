@@ -393,7 +393,6 @@ onDestroy(() => {
                   size="sm"
                   animate={false}
                   showLabel={false}
-                  debugControls={true}
                   pressable={slot.selectable}
                   selected={slot.selected}
                   onPress={() => handleCardInteraction(slot.optionId)}

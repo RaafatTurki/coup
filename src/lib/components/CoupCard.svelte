@@ -1,6 +1,6 @@
 <script lang="ts">
 import { onDestroy, onMount } from 'svelte';
-import { INFLUENCE_CARDS, type InfluenceCard } from '$lib/game/types';
+import type { InfluenceCard } from '$lib/game/types';
 
 type CardSize = 'sm' | 'md' | 'lg';
 
@@ -29,7 +29,6 @@ let {
   animate = true,
   delayMs = 0,
   showLabel = true,
-  debugControls = false,
   pressable = false,
   selected = false,
   onPress = () => {}
@@ -41,7 +40,6 @@ let {
   animate?: boolean;
   delayMs?: number;
   showLabel?: boolean;
-  debugControls?: boolean;
   pressable?: boolean;
   selected?: boolean;
   onPress?: () => void;
@@ -60,17 +58,13 @@ let previousCard: InfluenceCard | null = null;
 let previousHidden = false;
 let previousRevealed = false;
 let ignoreNextClick = $state(false);
-let debugCardOverride = $state<InfluenceCard | null>(null);
-let debugHiddenOverride = $state(false);
-let debugRevealedOverride = $state(false);
-let debugOverrideActive = $state(false);
 let renderedCard = $state<InfluenceCard | null>(null);
 let renderedHidden = $state(false);
 let renderedRevealed = $state(false);
 
-const sourceCard = $derived(debugOverrideActive ? debugCardOverride : card);
-const sourceHidden = $derived(debugOverrideActive ? debugHiddenOverride : hidden);
-const sourceRevealed = $derived(debugOverrideActive ? debugRevealedOverride : revealed);
+const sourceCard = $derived(card);
+const sourceHidden = $derived(hidden);
+const sourceRevealed = $derived(revealed);
 const faceDown = $derived(renderedHidden || !isInfluenceCard(renderedCard));
 const safeSize = $derived(isCardSize(size) ? size : 'md');
 const scale = $derived(SIZE_SCALE[safeSize]);
@@ -145,32 +139,6 @@ function syncPreviousState(nextCard: InfluenceCard | null, nextHidden: boolean, 
   previousCard = nextCard;
   previousHidden = nextHidden;
   previousRevealed = nextRevealed;
-}
-
-function randomInfluenceCard(excludeCard?: InfluenceCard | null): InfluenceCard {
-  const availableCards = INFLUENCE_CARDS.filter((entry) => entry !== excludeCard);
-  const pool = availableCards.length > 0 ? availableCards : [...INFLUENCE_CARDS];
-  return pool[Math.floor(Math.random() * pool.length)];
-}
-
-function triggerRevealDebug(): void {
-  const nextCard = isInfluenceCard(sourceCard) ? sourceCard : randomInfluenceCard();
-  debugOverrideActive = true;
-  debugCardOverride = nextCard;
-  debugHiddenOverride = false;
-  debugRevealedOverride = true;
-}
-
-function triggerSwapDebug(): void {
-  const nextCard = randomInfluenceCard(isInfluenceCard(sourceCard) ? sourceCard : null);
-  debugOverrideActive = true;
-  debugCardOverride = nextCard;
-  debugHiddenOverride = false;
-  debugRevealedOverride = false;
-}
-
-function resetDebugCard(): void {
-  debugOverrideActive = false;
 }
 
 function handleCardPressStart(event: PointerEvent): void {
@@ -276,40 +244,6 @@ $effect(() => {
   {#if showLabel}
     <figcaption>{cardLabel}</figcaption>
   {/if}
-  <!-- {#if debugControls} -->
-  <!--   <div class="debug-controls"> -->
-  <!--     <button -->
-  <!--       type="button" -->
-  <!--       class="debug-btn btn btn-secondary" -->
-  <!--       onclick={(event) => { -->
-  <!--         event.stopPropagation(); -->
-  <!--         resetDebugCard(); -->
-  <!--       }} -->
-  <!--     > -->
-  <!--       Live -->
-  <!--     </button> -->
-  <!--     <button -->
-  <!--       type="button" -->
-  <!--       class="debug-btn btn" -->
-  <!--       onclick={(event) => { -->
-  <!--         event.stopPropagation(); -->
-  <!--         triggerRevealDebug(); -->
-  <!--       }} -->
-  <!--     > -->
-  <!--       Reveal -->
-  <!--     </button> -->
-  <!--     <button -->
-  <!--       type="button" -->
-  <!--       class="debug-btn btn" -->
-  <!--       onclick={(event) => { -->
-  <!--         event.stopPropagation(); -->
-  <!--         triggerSwapDebug(); -->
-  <!--       }} -->
-  <!--     > -->
-  <!--       Swap -->
-  <!--     </button> -->
-  <!--   </div> -->
-  <!-- {/if} -->
 </figure>
 
 <style>
@@ -426,28 +360,6 @@ figcaption {
   text-transform: uppercase;
   color: #f3d9a2;
   animation: caption-pulse 1.8s ease-in-out infinite;
-}
-
-.debug-controls {
-  width: calc(41px * var(--scale));
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.22rem;
-}
-
-.debug-btn {
-  --control-radius: 0.4rem;
-  --btn-padding: 0.12rem 0.24rem;
-  --btn-line-height: 1.1;
-  --btn-fg: #2f220f;
-  flex: 0 1 auto;
-  min-width: 0;
-  border-color: rgb(248 204 111 / 30%);
-  box-shadow: none;
-  font-size: 0.46rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
 @keyframes float {
