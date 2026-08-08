@@ -338,7 +338,32 @@ function resolveInfluenceChoice(game: GameState, playerId: string, choiceId: str
 
   finalizeGameIfNeeded(game);
   if (game.status === 'active') {
+    if (shouldRevealAllInfluence(playerId, pending.after) && !isAlive(player)) {
+      endTurn(game);
+      return;
+    }
+
     continueAfterInfluence(game, pending.after);
+  }
+}
+
+function shouldRevealAllInfluence(playerId: string, after: PendingAfterInfluence): boolean {
+  return after.type === 'resolve_action' && after.action === 'assassinate' && after.targetId === playerId;
+}
+
+function revealAllInfluence(game: GameState, player: PlayerState, choices: InfluenceChoice[], reason: string): void {
+  for (const choice of choices) {
+    const slot = player.influence[choice.slotIndex];
+    if (!slot || slot.revealed) {
+      continue;
+    }
+
+    slot.revealed = true;
+    appendLog(game, `${player.name} reveals ${choice.card} (${reason}).`);
+  }
+
+  if (!isAlive(player)) {
+    appendLog(game, `${player.name} is eliminated.`);
   }
 }
 
@@ -357,6 +382,16 @@ function queueInfluenceLoss(game: GameState, playerId: string, reason: string, a
 
   if (choices.length === 0) {
     throw new GameError(`${player.name} has no remaining influence.`);
+  }
+
+  if (choices.length > 1 && shouldRevealAllInfluence(playerId, after)) {
+    revealAllInfluence(game, player, choices, `${reason}; assassinated`);
+    game.pending = null;
+    finalizeGameIfNeeded(game);
+    if (game.status === 'active') {
+      endTurn(game);
+    }
+    return;
   }
 
   game.pending = {
