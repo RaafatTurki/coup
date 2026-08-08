@@ -1,6 +1,7 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
 import type { GameState } from '$lib/game/types';
-import { GameError, getPublicGameState } from '$lib/server/coup-store';
+import { GameError } from '$lib/server/coup-store';
+import { getPublicGameState } from '$lib/server/coup-public';
 import { getConnectedPlayerIds } from '$lib/server/realtime';
 
 export function gameErrorResponse(error: unknown) {

@@ -10,20 +10,16 @@ import {
   type InfluenceChoice,
   type PendingAfterInfluence,
   type PendingState,
-  type PlayerState,
-  type PublicGameState,
-  type PublicPendingState
+  type PlayerState
 } from '$lib/game/types';
 import { actionCost, canUseAction, mustCoup } from '$lib/game/rules';
+import { startGameSweep } from '$lib/server/coup-cleanup';
 
 const MAX_PLAYERS = 6;
 const MIN_PLAYERS_TO_START = 2;
 const GAME_ID_LENGTH = 6;
 const GAME_ID_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const MAX_LOG_ENTRIES = 200;
-const WAITING_GAME_TTL_MS = 3_600_000;
-const FINISHED_GAME_TTL_MS = 7_200_000;
-const SWEEP_INTERVAL_MS = 60_000;
 
 const ACTION_CLAIMS: Partial<Record<GameActionType, InfluenceCard>> = {
   tax: 'duke',
@@ -43,9 +39,6 @@ type ResponsePending = Extract<
 >;
 
 const games = new Map<string, GameState>();
-const globalStore = globalThis as typeof globalThis & {
-  __isSweeping?: boolean;
-};
 
 export class GameError extends Error {
   status: number;
@@ -55,28 +48,6 @@ export class GameError extends Error {
     this.name = 'GameError';
     this.status = status;
   }
-}
-
-function startGameSweep(): void {
-  if (globalStore.__isSweeping) {
-    return;
-  }
-
-  globalStore.__isSweeping = true;
-  const sweepTimer = setInterval(() => {
-    const now = nowMs();
-    for (const [gameId, game] of games.entries()) {
-      const ageMs = now - new Date(game.updatedAt).getTime();
-      if (game.status === 'waiting' && ageMs > WAITING_GAME_TTL_MS) {
-        games.delete(gameId);
-        continue;
-      }
-      if (game.status === 'finished' && ageMs > FINISHED_GAME_TTL_MS) {
-        games.delete(gameId);
-      }
-    }
-  }, SWEEP_INTERVAL_MS);
-  sweepTimer.unref?.();
 }
 
 function appendLog(game: GameState, message: string): void {
@@ -109,10 +80,6 @@ function makeGameId(): string {
 
 function nowIso(): string {
   return new Date().toISOString();
-}
-
-function nowMs(): number {
-  return Date.now();
 }
 
 function normalizeName(name: string): string {
@@ -190,14 +157,6 @@ function isBlockableAction(action: GameActionType): action is keyof typeof BLOCK
 
 function alivePlayerIds(game: GameState): string[] {
   return game.players.filter((player) => isAlive(player)).map((player) => player.id);
-}
-
-function remainingInfluence(player: PlayerState, gameStatus: GameState['status']): number {
-  if (gameStatus === 'waiting') {
-    return 2;
-  }
-
-  return player.influence.reduce((count, slot) => count + Number(!slot.revealed), 0);
 }
 
 function getPlayerOrThrow(game: GameState, playerId: string): PlayerState {
@@ -1289,109 +1248,7 @@ export function heartbeatPlayer(gameId: string, playerId: string): void {
   getPlayerOrThrow(game, playerId);
 }
 
-function toPublicPending(pending: PendingState | null, viewerPlayerId: string | undefined): PublicPendingState | null {
-  if (!pending) {
-    return null;
-  }
-
-  switch (pending.type) {
-    case 'await_action_response':
-      return {
-        type: pending.type,
-        actorId: pending.actorId,
-        action: pending.action,
-        targetId: pending.targetId,
-        claimRole: pending.claimRole,
-        blockRoles: [...pending.blockRoles],
-        pendingPlayerIds: [...pending.pendingPlayerIds]
-      };
-    case 'await_action_challenge':
-      return {
-        type: pending.type,
-        actorId: pending.actorId,
-        action: pending.action,
-        targetId: pending.targetId,
-        claimRole: pending.claimRole,
-        pendingPlayerIds: [...pending.pendingPlayerIds]
-      };
-    case 'await_block':
-      return {
-        type: pending.type,
-        actorId: pending.actorId,
-        action: pending.action,
-        targetId: pending.targetId,
-        pendingPlayerIds: [...pending.pendingPlayerIds]
-      };
-    case 'await_block_challenge':
-      return {
-        type: pending.type,
-        actorId: pending.actorId,
-        action: pending.action,
-        targetId: pending.targetId,
-        blockerId: pending.blockerId,
-        blockRole: pending.blockRole,
-        pendingPlayerIds: [...pending.pendingPlayerIds]
-      };
-    case 'await_influence':
-      return {
-        type: pending.type,
-        playerId: pending.playerId,
-        reason: pending.reason,
-        yourChoices:
-          viewerPlayerId === pending.playerId
-            ? pending.choices.map((choice) => ({ id: choice.id, card: choice.card }))
-            : []
-      };
-    case 'await_exchange':
-      return {
-        type: pending.type,
-        playerId: pending.playerId,
-        keepCount: pending.keepCount,
-        yourOptions: viewerPlayerId === pending.playerId ? pending.options.map((option) => ({ ...option })) : []
-      };
-  }
-}
-
-export function getPublicGameState(
-  game: GameState,
-  viewerPlayerId?: string,
-  connectedPlayerIds: ReadonlySet<string> = new Set()
-): PublicGameState {
-  reconcileHostPlayer(game);
-  const viewer = viewerPlayerId ? game.players.find((player) => player.id === viewerPlayerId) : undefined;
-  const currentTurn = game.status === 'active' || game.status === 'finished' ? game.players[game.turnIndex] : null;
-
-  return {
-    id: game.id,
-    status: game.status,
-    hostPlayerId: game.hostPlayerId,
-    players: game.players.map((player) => {
-      const remaining = remainingInfluence(player, game.status);
-      return {
-        id: player.id,
-        name: player.name,
-        connected: connectedPlayerIds.has(player.id),
-        coins: player.coins,
-        remainingInfluence: remaining,
-        revealedCards: game.status === 'waiting' ? [] : player.influence.filter((card) => card.revealed).map((card) => card.card),
-        isAlive: game.status === 'waiting' ? true : remaining > 0
-      };
-    }),
-    currentTurnPlayerId: currentTurn?.id ?? null,
-    winnerId: game.winnerId,
-    log: [...game.log],
-    pending: toPublicPending(game.pending, viewerPlayerId),
-    createdAt: game.createdAt,
-    updatedAt: game.updatedAt,
-    you: viewer
-      ? {
-          id: viewer.id,
-          name: viewer.name,
-          cards: viewer.influence.filter((card) => !card.revealed).map((card) => card.card),
-          revealedCards: viewer.influence.filter((card) => card.revealed).map((card) => card.card)
-        }
-      : null
-  };
-}
-
-void startGameSweep();
+void startGameSweep({
+  entries: () => games.entries(),
+  delete: (gameId) => games.delete(gameId)
+});

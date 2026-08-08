@@ -1,7 +1,8 @@
 import { building } from '$app/environment';
 import { WebSocket, WebSocketServer } from 'ws';
 import type { GameState, PublicGameState } from '$lib/game/types';
-import { getGame, getPublicGameState, heartbeatPlayer } from '$lib/server/coup-store';
+import { getGame, heartbeatPlayer } from '$lib/server/coup-store';
+import { getPublicGameState } from '$lib/server/coup-public';
 
 const DEFAULT_WS_PORT = 24678;
 const HEARTBEAT_INTERVAL_MS = 3_000;
