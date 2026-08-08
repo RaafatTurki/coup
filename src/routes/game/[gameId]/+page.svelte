@@ -13,11 +13,17 @@ import { actionNeedsTarget as actionRequiresTarget, canUseAction as canUseGameAc
 import { clearStoredPlayer, readStoredPlayer, rememberPlayer } from '$lib/game/client';
 import { createRealtimeClient, type RealtimeClient } from '$lib/game/realtime';
 import { messageFromError, requestJson } from '$lib/game/http';
+import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
 import GamePlayersList from '$lib/components/GamePlayersList.svelte';
 
 type PageData = { gameId: string };
 type GamePayload = { game: PublicGameState };
 type JoinPayload = GamePayload & { playerId: string };
+type Confirmation =
+  | { kind: 'leave'; title: string; message: string; confirmLabel: string }
+  | { kind: 'reset'; title: string; message: string; confirmLabel: string }
+  | { kind: 'transfer'; title: string; message: string; confirmLabel: string; targetId: string }
+  | { kind: 'kick'; title: string; message: string; confirmLabel: string; targetId: string };
 
 let { data } = $props<{ data: PageData }>();
 
@@ -36,6 +42,7 @@ let selectedTargetId = $state('');
 let selectedBlockRole = $state<BlockRole>('captain');
 let selectedExchangeKeepIds = $state<string[]>([]);
 let exchangeSelectionKey = $state('');
+let confirmation = $state<Confirmation | null>(null);
 
 let realtimeClient: RealtimeClient | null = null;
 let copyFeedbackTimer: ReturnType<typeof setTimeout> | null = null;
@@ -199,11 +206,16 @@ async function resetGame(): Promise<void> {
   if (!playerId) {
     return;
   }
-  const confirmed = typeof window === 'undefined' || window.confirm('Reset the round and return to waiting state?');
-  if (!confirmed) {
-    return;
-  }
 
+  confirmation = {
+    kind: 'reset',
+    title: 'Reset this round?',
+    message: 'The current round will end and every player will return to the waiting table.',
+    confirmLabel: 'Reset round'
+  };
+}
+
+async function performResetGame(): Promise<void> {
   errorMessage = '';
   resetPending = true;
   try {
@@ -227,11 +239,15 @@ async function leaveTable(): Promise<void> {
     return;
   }
 
-  const confirmed = typeof window === 'undefined' || window.confirm('Leave this table and return to the lobby?');
-  if (!confirmed) {
-    return;
-  }
+  confirmation = {
+    kind: 'leave',
+    title: 'Leave this table?',
+    message: 'You will return to the lobby and give up your seat at this table.',
+    confirmLabel: 'Leave table'
+  };
+}
 
+async function performLeaveTable(): Promise<void> {
   errorMessage = '';
   leavePending = true;
 
@@ -279,17 +295,56 @@ async function submitHostAction(path: string, targetId: string, fallbackError: s
 }
 
 async function transferHostTo(targetId: string): Promise<void> {
-  await submitHostAction(`/api/games/${data.gameId}/host`, targetId, 'Unable to transfer host.');
+  const playerName = playerNameById(targetId);
+  confirmation = {
+    kind: 'transfer',
+    title: `Make ${playerName} the host?`,
+    message: `${playerName} will take ownership of this table and its host controls.`,
+    confirmLabel: 'Transfer ownership',
+    targetId
+  };
 }
 
 async function kickPlayerFromTable(targetId: string): Promise<void> {
-  const confirmed =
-    typeof window === 'undefined' || window.confirm(`Remove ${playerNameById(targetId)} from the table?`);
-  if (!confirmed) {
+  const playerName = playerNameById(targetId);
+  confirmation = {
+    kind: 'kick',
+    title: `Remove ${playerName}?`,
+    message: `${playerName} will be removed from this table and disconnected from the game.`,
+    confirmLabel: 'Remove player',
+    targetId
+  };
+}
+
+function cancelConfirmation(): void {
+  confirmation = null;
+}
+
+async function confirmAction(): Promise<void> {
+  const confirmedAction = confirmation;
+  confirmation = null;
+
+  if (!confirmedAction) {
     return;
   }
 
-  await submitHostAction(`/api/games/${data.gameId}/kick`, targetId, 'Unable to kick player.');
+  if (confirmedAction.kind === 'leave') {
+    await performLeaveTable();
+  } else if (confirmedAction.kind === 'reset') {
+    await performResetGame();
+  } else if (confirmedAction.kind === 'transfer') {
+    await submitHostAction(
+      `/api/games/${data.gameId}/host`,
+      confirmedAction.targetId,
+      'Unable to transfer host.'
+    );
+  } else if (confirmedAction.kind === 'kick') {
+    await submitHostAction(
+      `/api/games/${data.gameId}/kick`,
+      confirmedAction.targetId,
+      'Unable to kick player.'
+    );
+  }
 }
 
 async function submitCommand(command: PlayerCommand, fallbackError: string): Promise<void> {
@@ -709,6 +764,15 @@ onMount(() => {
   {#if errorMessage}
     <p class="error-text error-text-animated">{errorMessage}</p>
   {/if}
+
+  <ConfirmDialog
+    open={confirmation !== null}
+    title={confirmation?.title ?? ''}
+    message={confirmation?.message ?? ''}
+    confirmLabel={confirmation?.confirmLabel ?? 'Confirm'}
+    onConfirm={confirmAction}
+    onCancel={cancelConfirmation}
+  />
 </main>
 
 <style>
