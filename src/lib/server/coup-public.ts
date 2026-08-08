@@ -1,17 +1,7 @@
-import type {
-  GameState,
-  PendingState,
-  PlayerState,
-  PublicGameState,
-  PublicPendingState
-} from '$lib/game/types';
+import type { GameState, PendingState, PublicGameState, PublicPendingState } from '$lib/game/types';
 
-function remainingInfluence(player: PlayerState, gameStatus: GameState['status']): number {
-  if (gameStatus === 'waiting') {
-    return 2;
-  }
-
-  return player.influence.reduce((count, slot) => count + Number(!slot.revealed), 0);
+function isPlayerAlive(game: GameState, playerIndex: number): boolean {
+  return game.status === 'waiting' || game.players[playerIndex].influence.some((slot) => !slot.revealed);
 }
 
 function toPublicPending(pending: PendingState | null, viewerPlayerId: string | undefined): PublicPendingState | null {
@@ -89,24 +79,18 @@ export function getPublicGameState(
     id: game.id,
     status: game.status,
     hostPlayerId: game.hostPlayerId,
-    players: game.players.map((player) => {
-      const remaining = remainingInfluence(player, game.status);
-      return {
-        id: player.id,
-        name: player.name,
-        connected: connectedPlayerIds.has(player.id),
-        coins: player.coins,
-        remainingInfluence: remaining,
-        revealedCards: game.status === 'waiting' ? [] : player.influence.filter((card) => card.revealed).map((card) => card.card),
-        isAlive: game.status === 'waiting' ? true : remaining > 0
-      };
-    }),
+    players: game.players.map((player, index) => ({
+      id: player.id,
+      name: player.name,
+      connected: connectedPlayerIds.has(player.id),
+      coins: player.coins,
+      revealedCards: game.status === 'waiting' ? [] : player.influence.filter((card) => card.revealed).map((card) => card.card),
+      isAlive: isPlayerAlive(game, index)
+    })),
     currentTurnPlayerId: currentTurn?.id ?? null,
     winnerId: game.winnerId,
     log: [...game.log],
     pending: toPublicPending(game.pending, viewerPlayerId),
-    createdAt: game.createdAt,
-    updatedAt: game.updatedAt,
     you: viewer
       ? {
           id: viewer.id,

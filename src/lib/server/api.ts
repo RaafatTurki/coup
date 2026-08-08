@@ -2,7 +2,7 @@ import { json, type RequestHandler } from '@sveltejs/kit';
 import type { GameState } from '$lib/game/types';
 import { GameError } from '$lib/server/coup-store';
 import { getPublicGameState } from '$lib/server/coup-public';
-import { getConnectedPlayerIds } from '$lib/server/realtime';
+import { broadcastGameState, getConnectedPlayerIds } from '$lib/server/realtime';
 
 export function gameErrorResponse(error: unknown) {
   if (error instanceof GameError) {
@@ -30,6 +30,18 @@ export function publicGamePayload(game: GameState, viewerPlayerId?: string) {
   return {
     game: getPublicGameState(game, viewerPlayerId, getConnectedPlayerIds(game.id))
   };
+}
+
+export function publicGameResponse(game: GameState, viewerPlayerId?: string, extra: Record<string, unknown> = {}) {
+  return json({
+    ...extra,
+    ...publicGamePayload(game, viewerPlayerId)
+  });
+}
+
+export function broadcastGameResponse(game: GameState, viewerPlayerId?: string, extra: Record<string, unknown> = {}) {
+  broadcastGameState(game);
+  return publicGameResponse(game, viewerPlayerId, extra);
 }
 
 export function requireGameId(gameId: string | undefined) {

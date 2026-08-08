@@ -104,7 +104,6 @@ export interface PublicPlayerState {
   name: string;
   connected: boolean;
   coins: number;
-  remainingInfluence: number;
   revealedCards: InfluenceCard[];
   isAlive: boolean;
 }
@@ -172,8 +171,6 @@ export interface PublicGameState {
   winnerId: string | null;
   log: string[];
   pending: PublicPendingState | null;
-  createdAt: string;
-  updatedAt: string;
   you: PlayerView | null;
 }
 

@@ -1,7 +1,7 @@
 import { building } from '$app/environment';
 import { WebSocket, WebSocketServer } from 'ws';
 import type { GameState, PublicGameState } from '$lib/game/types';
-import { getGame, heartbeatPlayer } from '$lib/server/coup-store';
+import { assertPlayerInGame, getGame } from '$lib/server/coup-store';
 import { getPublicGameState } from '$lib/server/coup-public';
 
 const DEFAULT_WS_PORT = 24678;
@@ -167,7 +167,7 @@ function runHeartbeat(state: RealtimeState): void {
     }
 
     try {
-      heartbeatPlayer(client.gameId, client.playerId);
+      assertPlayerInGame(client.gameId, client.playerId);
     } catch (error) {
       sendJson(socket, {
         type: 'error',
