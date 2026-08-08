@@ -1,3 +1,4 @@
+import { customAlphabet } from 'nanoid';
 import {
   ACTION_TYPES,
   INFLUENCE_CARDS,
@@ -20,6 +21,7 @@ const MIN_PLAYERS_TO_START = 2;
 const GAME_ID_LENGTH = 6;
 const GAME_ID_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const MAX_LOG_ENTRIES = 200;
+const makeGameToken = customAlphabet(GAME_ID_ALPHABET, GAME_ID_LENGTH);
 
 const ACTION_CLAIMS: Partial<Record<GameActionType, InfluenceCard>> = {
   tax: 'duke',
@@ -66,15 +68,10 @@ function makeChoiceId(): string {
 }
 
 function makeGameId(): string {
-  let gameId = '';
-
-  do {
-    gameId = Array.from({ length: GAME_ID_LENGTH }, () => {
-      const index = Math.floor(Math.random() * GAME_ID_ALPHABET.length);
-      return GAME_ID_ALPHABET[index];
-    }).join('');
-  } while (games.has(gameId));
-
+  let gameId = makeGameToken();
+  while (games.has(gameId)) {
+    gameId = makeGameToken();
+  }
   return gameId;
 }
 
