@@ -109,7 +109,7 @@ export interface PublicPlayerState {
   connected: boolean;
   coins: number;
   remainingInfluence: number;
-  revealedCount: number;
+  revealedCards: InfluenceCard[];
   isAlive: boolean;
 }
 

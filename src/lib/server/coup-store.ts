@@ -1350,7 +1350,7 @@ export function getPublicGameState(
         connected: connectedPlayerIds.has(player.id),
         coins: player.coins,
         remainingInfluence: remaining,
-        revealedCount: game.status === 'waiting' ? 0 : 2 - remaining,
+        revealedCards: game.status === 'waiting' ? [] : player.influence.filter((card) => card.revealed).map((card) => card.card),
         isAlive: game.status === 'waiting' ? true : remaining > 0
       };
     }),

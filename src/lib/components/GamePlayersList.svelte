@@ -194,16 +194,16 @@ function standardPlayerCardSlots(player: PublicGameState['players'][number]): Ca
     return mySlots.slice(0, TOTAL_INFLUENCE_SLOTS);
   }
 
-  const revealedCount = Math.max(0, Math.min(TOTAL_INFLUENCE_SLOTS, player.revealedCount));
-  const hiddenCount = TOTAL_INFLUENCE_SLOTS - revealedCount;
+  const revealedCards = player.revealedCards.slice(0, TOTAL_INFLUENCE_SLOTS);
+  const hiddenCount = TOTAL_INFLUENCE_SLOTS - revealedCards.length;
   const slots: CardSlot[] = [];
 
   for (let index = 0; index < hiddenCount; index += 1) {
     slots.push({ card: null, hidden: true, revealed: false });
   }
 
-  for (let index = 0; index < revealedCount; index += 1) {
-    slots.push({ card: null, hidden: true, revealed: true });
+  for (let index = 0; index < revealedCards.length; index += 1) {
+    slots.push({ card: revealedCards[index] ?? null, hidden: false, revealed: true });
   }
 
   return slots;
