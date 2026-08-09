@@ -233,7 +233,10 @@ function playerDisplayCards(player: PublicGameState['players'][number]): Display
   .filter((option: ExchangePending['yourOptions'][number]) => selectedIds.has(option.id))
   .map((option: ExchangePending['yourOptions'][number]) => option.id);
   const revealedCards = you.revealedCards.map((card: PlayerView['cards'][number], index: number) => ({
-    key: `${player.id}-revealed-${index}`,
+    // Keep influence-slot keys stable when entering and leaving the exchange
+    // layout. Otherwise Svelte retains the old revealed card for the grouped
+    // outros while also rendering its replacement, producing a third card.
+    key: `${player.id}-slot-${you.cards.length + index}`,
     card,
     hidden: false,
     revealed: true,
@@ -248,7 +251,7 @@ function playerDisplayCards(player: PublicGameState['players'][number]): Display
     const selected = option ? selectedIds.has(option.id) : false;
 
     return {
-      key: `${player.id}-concealed-${index}`,
+      key: `${player.id}-slot-${index}`,
       card,
       hidden: false,
       revealed: false,

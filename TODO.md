@@ -1,1 +1,4 @@
-
+- highlights are fucked in chrome
+- add a timer
+- add a pass indicator
+- make actions more obvious
