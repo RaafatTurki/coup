@@ -14,6 +14,7 @@ import { actionNeedsTarget as actionRequiresTarget, canUseAction as canUseGameAc
 import { clearStoredPlayer, readStoredPlayer, rememberPlayer } from '$lib/game/client';
 import { createRealtimeClient, type RealtimeClient } from '$lib/game/realtime';
 import { messageFromError, requestJson } from '$lib/game/http';
+import ActionDropdown from '$lib/components/ActionDropdown.svelte';
 import CardSpotlight from '$lib/components/CardSpotlight.svelte';
 import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
 import GamePlayersList from '$lib/components/GamePlayersList.svelte';
@@ -60,6 +61,16 @@ const ACTION_LABEL: Record<GameActionType, string> = {
   exchange: 'Exchange'
 };
 
+const ACTION_DETAIL: Record<GameActionType, string> = {
+  income: 'Take 1 coin',
+  foreign_aid: 'Take 2 coins · blockable by Duke',
+  tax: 'Take 3 coins · claim Duke',
+  steal: 'Take up to 2 coins · claim Captain',
+  assassinate: 'Pay 3 coins · claim Assassin',
+  coup: 'Pay 7 coins · cannot be blocked',
+  exchange: 'Draw 2 cards · claim Ambassador'
+};
+
 const me = $derived(game?.players.find((player) => player.id === playerId) ?? null);
 const you = $derived(game?.you ?? null);
 const pending = $derived(game?.pending ?? null);
@@ -67,6 +78,14 @@ const isHost = $derived(Boolean(game && playerId && game.hostPlayerId === player
 const isYourTurn = $derived(Boolean(game && game.status === 'active' && game.currentTurnPlayerId === playerId));
 const targetablePlayers = $derived((game?.players ?? []).filter((player) => player.id !== playerId && player.isAlive));
 const actionNeedsTarget = $derived(actionRequiresTarget(selectedAction));
+const actionOptions = $derived(
+  ACTION_TYPES.map((action) => ({
+    value: action,
+    label: ACTION_LABEL[action],
+    detail: ACTION_DETAIL[action],
+    disabled: !canUseAction(action)
+  }))
+);
 const currentTurnName = $derived(
   game?.players.find((player) => player.id === game?.currentTurnPlayerId)?.name ?? '-'
 );
@@ -569,11 +588,12 @@ onMount(() => {
         {#if !pending}
           {#if isYourTurn}
             <div class="compact-row">
-              <select class="input-base" bind:value={selectedAction}>
-                {#each ACTION_TYPES as action}
-                  <option value={action} disabled={!canUseAction(action)}>{ACTION_LABEL[action]}</option>
-                {/each}
-              </select>
+              <ActionDropdown
+                value={selectedAction}
+                options={actionOptions}
+                disabled={actionPending}
+                onchange={(action) => (selectedAction = action)}
+              />
 
               {#if actionNeedsTarget}
                 <select class="input-base" bind:value={selectedTargetId} disabled={targetablePlayers.length === 0}>
@@ -825,6 +845,11 @@ h2 {
 
 .header h1 span {
   letter-spacing: 0.08em;
+}
+
+.header.panel-base {
+  z-index: 10;
+  overflow: visible;
 }
 
 .copy-code-btn.btn {
